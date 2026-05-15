@@ -45,9 +45,11 @@ Desarrollar y evaluar un sistema de clasificacion automatica de modulaciones dig
    - Accuracy global.
    - Matriz de confusion.
    - Analisis de errores por modulacion.
+   - Repeticion con multiples semillas para estimar estabilidad del resultado.
 
 5. Experimentos de investigacion:
    - Comparacion IA vs baseline DSP por distancia a centroides.
+   - Validacion multisemilla para evitar depender de una unica corrida favorable.
    - Barrido de SNR para medir robustez ante ruido.
    - Ablation study para estimar el aporte de grupos de rasgos.
    - Prueba de generalizacion entrenando en AWGN y evaluando en AWGN, Rayleigh y multipath.
@@ -58,16 +60,18 @@ El proyecto combina simulacion completa por codigo, DSP interpretable e IA liger
 
 ## Diseno experimental fortalecido
 
-La version extendida no se limita a reportar accuracy. Se proponen cuatro preguntas medibles:
+La version extendida no se limita a reportar accuracy. Se proponen cinco preguntas medibles:
 
 1. ¿La IA mejora frente a un baseline DSP clasico?
-2. ¿A partir de que SNR el sistema se vuelve confiable?
-3. ¿Que grupos de rasgos aportan mas informacion?
-4. ¿El modelo generaliza cuando el canal cambia de AWGN a Rayleigh o multipath?
+2. ¿El resultado se mantiene estable al repetir el experimento con distintas semillas?
+3. ¿A partir de que SNR el sistema se vuelve confiable?
+4. ¿Que grupos de rasgos aportan mas informacion?
+5. ¿El modelo generaliza cuando el canal cambia de AWGN a Rayleigh o multipath?
 
 Resultados iniciales:
 
 - El MLP con rasgos DSP alcanzo 98.0% de accuracy frente a 82.1% del baseline de distancia a centroides.
+- La validacion con multiples semillas reporta media y desviacion estandar para que el resultado sea mas defendible.
 - En el barrido por SNR, el modelo mejora claramente a partir de 5 dB y se vuelve casi perfecto desde 10 dB en el escenario simulado.
 - En el ablation study, los rasgos de fase fueron los mas fuertes de forma aislada.
 - Multipath fue el escenario mas dificil, bajando el accuracy del MLP a 84.6%, lo cual abre una linea de mejora realista.

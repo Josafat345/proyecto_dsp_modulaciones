@@ -95,6 +95,58 @@
       "accuracy": 0.9801
     }
   ],
+  "repeated_trials": [
+    {
+      "seed": 410,
+      "baseline_accuracy": 0.8113,
+      "ai_accuracy": 0.9768,
+      "ai_minus_baseline": 0.1656
+    },
+    {
+      "seed": 411,
+      "baseline_accuracy": 0.7715,
+      "ai_accuracy": 0.9735,
+      "ai_minus_baseline": 0.202
+    },
+    {
+      "seed": 412,
+      "baseline_accuracy": 0.7517,
+      "ai_accuracy": 0.9801,
+      "ai_minus_baseline": 0.2285
+    },
+    {
+      "seed": 413,
+      "baseline_accuracy": 0.8543,
+      "ai_accuracy": 0.9901,
+      "ai_minus_baseline": 0.1358
+    },
+    {
+      "seed": 414,
+      "baseline_accuracy": 0.798,
+      "ai_accuracy": 0.9934,
+      "ai_minus_baseline": 0.1954
+    }
+  ],
+  "repeated_trial_summary": {
+    "baseline_accuracy": {
+      "mean": 0.7974,
+      "std": 0.0393,
+      "min": 0.7517,
+      "max": 0.8543
+    },
+    "ai_accuracy": {
+      "mean": 0.9828,
+      "std": 0.0086,
+      "min": 0.9735,
+      "max": 0.9934
+    },
+    "ai_minus_baseline": {
+      "mean": 0.1855,
+      "std": 0.0357,
+      "min": 0.1358,
+      "max": 0.2285
+    }
+  },
   "snr_sweep": [
     {
       "snr_db": -5,
@@ -186,6 +238,7 @@
   ],
   "interpretacion": [
     "El baseline de distancia a centroides funciona como referencia clasica usando los mismos rasgos DSP.",
+    "La validacion con multiples semillas reduce el riesgo de defender resultados dependientes de una sola particion del dataset.",
     "El barrido por SNR mide la robustez ante ruido y permite identificar el punto donde el clasificador deja de ser confiable.",
     "El ablation study estima que grupos de rasgos aportan mas informacion discriminante.",
     "La prueba de canales evalua si el modelo aprende modulacion o si depende demasiado de las condiciones AWGN del simulador."

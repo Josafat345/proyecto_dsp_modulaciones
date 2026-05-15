@@ -107,6 +107,16 @@ def round_row(row: dict) -> dict:
     return rounded
 
 
+def summarize_metric(rows: list[dict], key: str) -> dict:
+    values = np.asarray([float(row[key]) for row in rows], dtype=float)
+    return {
+        "mean": round(float(values.mean()), 4),
+        "std": round(float(values.std(ddof=1)), 4) if len(values) > 1 else 0.0,
+        "min": round(float(values.min()), 4),
+        "max": round(float(values.max()), 4),
+    }
+
+
 def main() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -120,6 +130,40 @@ def main() -> None:
         round_row({"modelo": "MLP IA con features DSP", "accuracy": full_bundle["ai_accuracy"]}),
     ]
     write_csv(OUTPUT_DIR / "baseline_vs_ai.csv", ["modelo", "accuracy"], baseline_rows)
+
+    print("Repitiendo validacion con multiples semillas...")
+    repeated_rows = []
+    repeated_seeds = [410, 411, 412, 413, 414]
+    for seed in repeated_seeds:
+        repeated_signals, repeated_y, _ = generate_dataset(
+            samples_per_class=180,
+            snr_range_db=(4.0, 24.0),
+            channel_model="awgn",
+            seed=seed,
+        )
+        repeated_x = extract_feature_matrix(repeated_signals)
+        bundle = fit_models(
+            repeated_x,
+            repeated_y,
+            feature_indexes=FEATURE_GROUPS["todos"],
+            seed=seed + 10_000,
+            epochs=100,
+        )
+        repeated_rows.append(
+            round_row(
+                {
+                    "seed": seed,
+                    "baseline_accuracy": bundle["baseline_accuracy"],
+                    "ai_accuracy": bundle["ai_accuracy"],
+                    "ai_minus_baseline": bundle["ai_accuracy"] - bundle["baseline_accuracy"],
+                }
+            )
+        )
+    write_csv(
+        OUTPUT_DIR / "repeated_trials.csv",
+        ["seed", "baseline_accuracy", "ai_accuracy", "ai_minus_baseline"],
+        repeated_rows,
+    )
 
     print("Evaluando robustez por SNR...")
     snr_rows = []
@@ -168,11 +212,18 @@ def main() -> None:
         "feature_count": len(FEATURE_NAMES),
         "feature_groups": {name: [FEATURE_NAMES[i] for i in indexes] for name, indexes in FEATURE_GROUPS.items()},
         "baseline_vs_ai": baseline_rows,
+        "repeated_trials": repeated_rows,
+        "repeated_trial_summary": {
+            "baseline_accuracy": summarize_metric(repeated_rows, "baseline_accuracy"),
+            "ai_accuracy": summarize_metric(repeated_rows, "ai_accuracy"),
+            "ai_minus_baseline": summarize_metric(repeated_rows, "ai_minus_baseline"),
+        },
         "snr_sweep": snr_rows,
         "ablation_features": ablation_rows,
         "channel_generalization": channel_rows,
         "interpretacion": [
             "El baseline de distancia a centroides funciona como referencia clasica usando los mismos rasgos DSP.",
+            "La validacion con multiples semillas reduce el riesgo de defender resultados dependientes de una sola particion del dataset.",
             "El barrido por SNR mide la robustez ante ruido y permite identificar el punto donde el clasificador deja de ser confiable.",
             "El ablation study estima que grupos de rasgos aportan mas informacion discriminante.",
             "La prueba de canales evalua si el modelo aprende modulacion o si depende demasiado de las condiciones AWGN del simulador.",
@@ -183,6 +234,8 @@ def main() -> None:
     print("\nResultados principales")
     for row in baseline_rows:
         print(f"{row['modelo']}: {row['accuracy']:.3f}")
+    repeated_summary = summarize_metric(repeated_rows, "ai_accuracy")
+    print(f"MLP IA multisemilla: {repeated_summary['mean']:.3f} +/- {repeated_summary['std']:.3f}")
     print(f"Archivos guardados en: {OUTPUT_DIR}")
 
 
