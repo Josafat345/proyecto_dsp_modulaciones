@@ -35,7 +35,6 @@ proyecto_dsp_modulaciones
 |-- outputs/
 |   |-- summary.json
 |   |-- confusion_matrix.csv
-|   |-- archive_notebooks/
 |   |-- research/
 |   `-- notebook_assets/
 |-- src/
@@ -127,9 +126,7 @@ El proyecto usa un solo notebook principal:
 notebook_proyecto_modulaciones.ipynb
 ```
 
-Este notebook unifica la explicacion del problema, las senales IQ, los rasgos DSP, el modelo MLP, las metricas, la validacion multisemilla, robustez por SNR, ablation study y generalizacion de canal.
-
-Los notebooks anteriores quedaron archivados en `outputs/archive_notebooks/` para mantener una sola entrega principal en la raiz del proyecto.
+Este notebook unifica la explicacion del problema, las senales IQ, los rasgos DSP, el modelo MLP, las metricas, la validacion multisemilla, robustez por SNR, ablation study y generalizacion de canal. En la entrega publica se mantiene un solo notebook principal para evitar duplicidad.
 
 El documento fuente es `marco_teorico_y_justificacion.md`.
 
