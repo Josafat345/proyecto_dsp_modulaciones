@@ -1,0 +1,45 @@
+{
+  "descripcion": "Clasificador MLP en NumPy para reconocimiento de modulaciones digitales.",
+  "train_accuracy": 0.9944,
+  "test_accuracy": 0.9792,
+  "clases": [
+    "BPSK",
+    "QPSK",
+    "8PSK",
+    "16QAM",
+    "2FSK",
+    "4ASK"
+  ],
+  "per_class": {
+    "BPSK": {
+      "correctas": 79,
+      "total": 79,
+      "accuracy": 1.0
+    },
+    "QPSK": {
+      "correctas": 76,
+      "total": 85,
+      "accuracy": 0.8941
+    },
+    "8PSK": {
+      "correctas": 91,
+      "total": 91,
+      "accuracy": 1.0
+    },
+    "16QAM": {
+      "correctas": 76,
+      "total": 77,
+      "accuracy": 0.987
+    },
+    "2FSK": {
+      "correctas": 79,
+      "total": 79,
+      "accuracy": 1.0
+    },
+    "4ASK": {
+      "correctas": 69,
+      "total": 69,
+      "accuracy": 1.0
+    }
+  }
+}

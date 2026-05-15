@@ -1,0 +1,193 @@
+{
+  "title": "Experimentos de robustez y explicabilidad para clasificacion de modulaciones",
+  "feature_count": 36,
+  "feature_groups": {
+    "amplitud": [
+      "amp_mean",
+      "amp_std",
+      "amp_max",
+      "amp_power_mean",
+      "papr",
+      "amp_p25",
+      "amp_p50",
+      "amp_p75",
+      "amp_delta_abs_mean"
+    ],
+    "iq": [
+      "i_std",
+      "q_std",
+      "abs_i_mean",
+      "abs_q_mean",
+      "iq_cross_mean",
+      "i_delta_abs_mean",
+      "q_delta_abs_mean"
+    ],
+    "fase": [
+      "phase_diff_std",
+      "phase_diff_abs_mean",
+      "delay_phase_lag1_order2",
+      "delay_phase_lag1_order4",
+      "delay_phase_lag1_order8",
+      "delay_phase_lag2_order2",
+      "delay_phase_lag2_order4",
+      "delay_phase_lag2_order8",
+      "delay_phase_lag4_order2",
+      "delay_phase_lag4_order4",
+      "delay_phase_lag4_order8",
+      "delay_phase_lag8_order2",
+      "delay_phase_lag8_order4",
+      "delay_phase_lag8_order8"
+    ],
+    "espectro": [
+      "spectral_entropy",
+      "effective_bandwidth",
+      "spectral_centroid",
+      "spectral_spread",
+      "spectral_peak",
+      "spectral_center_energy"
+    ],
+    "todos": [
+      "amp_mean",
+      "amp_std",
+      "amp_max",
+      "amp_power_mean",
+      "papr",
+      "i_std",
+      "q_std",
+      "abs_i_mean",
+      "abs_q_mean",
+      "iq_cross_mean",
+      "phase_diff_std",
+      "phase_diff_abs_mean",
+      "amp_p25",
+      "amp_p50",
+      "amp_p75",
+      "spectral_entropy",
+      "effective_bandwidth",
+      "spectral_centroid",
+      "spectral_spread",
+      "spectral_peak",
+      "spectral_center_energy",
+      "amp_delta_abs_mean",
+      "i_delta_abs_mean",
+      "q_delta_abs_mean",
+      "delay_phase_lag1_order2",
+      "delay_phase_lag1_order4",
+      "delay_phase_lag1_order8",
+      "delay_phase_lag2_order2",
+      "delay_phase_lag2_order4",
+      "delay_phase_lag2_order8",
+      "delay_phase_lag4_order2",
+      "delay_phase_lag4_order4",
+      "delay_phase_lag4_order8",
+      "delay_phase_lag8_order2",
+      "delay_phase_lag8_order4",
+      "delay_phase_lag8_order8"
+    ]
+  },
+  "baseline_vs_ai": [
+    {
+      "modelo": "Baseline DSP distancia-centroide",
+      "accuracy": 0.8213
+    },
+    {
+      "modelo": "MLP IA con features DSP",
+      "accuracy": 0.9801
+    }
+  ],
+  "snr_sweep": [
+    {
+      "snr_db": -5,
+      "baseline_accuracy": 0.25,
+      "ai_accuracy": 0.1796
+    },
+    {
+      "snr_db": 0,
+      "baseline_accuracy": 0.3333,
+      "ai_accuracy": 0.387
+    },
+    {
+      "snr_db": 5,
+      "baseline_accuracy": 0.3796,
+      "ai_accuracy": 0.8852
+    },
+    {
+      "snr_db": 10,
+      "baseline_accuracy": 0.8037,
+      "ai_accuracy": 0.9981
+    },
+    {
+      "snr_db": 15,
+      "baseline_accuracy": 0.9981,
+      "ai_accuracy": 1.0
+    },
+    {
+      "snr_db": 20,
+      "baseline_accuracy": 0.9093,
+      "ai_accuracy": 1.0
+    },
+    {
+      "snr_db": 25,
+      "baseline_accuracy": 0.8222,
+      "ai_accuracy": 0.9981
+    }
+  ],
+  "ablation_features": [
+    {
+      "grupo_features": "amplitud",
+      "n_features": 9,
+      "baseline_accuracy": 0.4293,
+      "ai_accuracy": 0.5509
+    },
+    {
+      "grupo_features": "iq",
+      "n_features": 7,
+      "baseline_accuracy": 0.6576,
+      "ai_accuracy": 0.7593
+    },
+    {
+      "grupo_features": "fase",
+      "n_features": 14,
+      "baseline_accuracy": 0.5881,
+      "ai_accuracy": 0.9529
+    },
+    {
+      "grupo_features": "espectro",
+      "n_features": 6,
+      "baseline_accuracy": 0.3524,
+      "ai_accuracy": 0.3424
+    },
+    {
+      "grupo_features": "todos",
+      "n_features": 36,
+      "baseline_accuracy": 0.8015,
+      "ai_accuracy": 0.9926
+    }
+  ],
+  "channel_generalization": [
+    {
+      "train_channel": "awgn",
+      "test_channel": "awgn",
+      "baseline_accuracy": 0.9907,
+      "ai_accuracy": 1.0
+    },
+    {
+      "train_channel": "awgn",
+      "test_channel": "rayleigh",
+      "baseline_accuracy": 0.9852,
+      "ai_accuracy": 1.0
+    },
+    {
+      "train_channel": "awgn",
+      "test_channel": "multipath",
+      "baseline_accuracy": 0.6741,
+      "ai_accuracy": 0.8463
+    }
+  ],
+  "interpretacion": [
+    "El baseline de distancia a centroides funciona como referencia clasica usando los mismos rasgos DSP.",
+    "El barrido por SNR mide la robustez ante ruido y permite identificar el punto donde el clasificador deja de ser confiable.",
+    "El ablation study estima que grupos de rasgos aportan mas informacion discriminante.",
+    "La prueba de canales evalua si el modelo aprende modulacion o si depende demasiado de las condiciones AWGN del simulador."
+  ]
+}

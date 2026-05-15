@@ -1,0 +1,4 @@
+train_channel,test_channel,baseline_accuracy,ai_accuracy
+awgn,awgn,0.9907,1.0
+awgn,rayleigh,0.9852,1.0
+awgn,multipath,0.6741,0.8463

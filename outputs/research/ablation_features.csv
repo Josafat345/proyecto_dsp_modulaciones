@@ -1,0 +1,6 @@
+grupo_features,n_features,baseline_accuracy,ai_accuracy
+amplitud,9,0.4293,0.5509
+iq,7,0.6576,0.7593
+fase,14,0.5881,0.9529
+espectro,6,0.3524,0.3424
+todos,36,0.8015,0.9926

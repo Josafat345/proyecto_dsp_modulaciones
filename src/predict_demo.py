@@ -1,0 +1,47 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+import numpy as np
+
+from dsp_features import extract_features
+from signal_generator import MODULATIONS, apply_channel, generate_clean_signal
+from simple_mlp import SimpleMLP
+
+
+ROOT = Path(__file__).resolve().parents[1]
+MODEL_PATH = ROOT / "outputs" / "model_parameters.npz"
+
+
+def load_model() -> tuple[SimpleMLP, np.ndarray, np.ndarray, list[str]]:
+    if not MODEL_PATH.exists():
+        raise FileNotFoundError("Primero ejecuta experiment.py para entrenar y guardar el modelo.")
+
+    data = np.load(MODEL_PATH)
+    labels = [str(label) for label in data["labels"].tolist()]
+    model = SimpleMLP(input_dim=data["w1"].shape[0], hidden_dim=data["w1"].shape[1], output_dim=data["w2"].shape[1])
+    model.w1 = data["w1"]
+    model.b1 = data["b1"]
+    model.w2 = data["w2"]
+    model.b2 = data["b2"]
+    return model, data["mean"], data["std"], labels
+
+
+def main() -> None:
+    model, mean, std, labels = load_model()
+    rng = np.random.default_rng(2026)
+
+    print("Demo de prediccion con senales nuevas")
+    print("-" * 54)
+    for modulation in MODULATIONS:
+        clean = generate_clean_signal(modulation, n_symbols=128, samples_per_symbol=8, rng=rng)
+        noisy = apply_channel(clean, snr_db=10.0, rng=rng)
+        features = (extract_features(noisy) - mean) / std
+        probabilities = model.predict_proba(features.reshape(1, -1))[0]
+        prediction = labels[int(np.argmax(probabilities))]
+        confidence = float(np.max(probabilities))
+        print(f"Real: {modulation:5s} | Predicho: {prediction:5s} | Confianza: {confidence:0.3f}")
+
+
+if __name__ == "__main__":
+    main()

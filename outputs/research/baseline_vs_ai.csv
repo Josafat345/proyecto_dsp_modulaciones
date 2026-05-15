@@ -1,0 +1,3 @@
+modelo,accuracy
+Baseline DSP distancia-centroide,0.8213
+MLP IA con features DSP,0.9801
