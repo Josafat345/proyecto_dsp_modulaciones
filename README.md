@@ -1,10 +1,12 @@
-# Reconocimiento inteligente de modulaciones digitales con DSP e IA
+# Adaptacion de dominio para reconocimiento de modulaciones digitales
 
-Proyecto de investigacion para clasificar modulaciones digitales usando senales IQ sinteticas, extraccion de rasgos DSP y un modelo de IA ligero implementado en NumPy.
+Proyecto de investigacion sobre clasificacion automatica de modulaciones digitales usando senales IQ sinteticas, rasgos de procesamiento digital de senales e inteligencia artificial ligera. La version actual no se limita a clasificar modulaciones en un escenario ideal: estudia que ocurre cuando un modelo entrenado en un dominio sintetico controlado se evalua en condiciones objetivo mas realistas.
 
 ## Idea central
 
-El sistema genera senales digitales simuladas bajo distintas condiciones de canal, ruido y desplazamiento de frecuencia. Luego extrae rasgos de la senal y entrena un clasificador neuronal para reconocer el tipo de modulacion.
+El proyecto genera senales IQ por codigo, extrae rasgos DSP interpretables y entrena un clasificador MLP implementado en NumPy. Ese clasificador primero se valida en condiciones controladas y luego se somete a cambio de dominio: menor SNR, mayor offset de frecuencia, fading Rayleigh y canal multipath.
+
+La pregunta fuerte ya no es solamente si el modelo clasifica modulaciones, sino si puede sostener su rendimiento cuando el entorno de recepcion cambia.
 
 Modulaciones incluidas:
 
@@ -17,11 +19,11 @@ Modulaciones incluidas:
 
 ## Pregunta de investigacion
 
-Que tan bien puede un modelo de IA ligero clasificar modulaciones digitales usando rasgos DSP compactos, aun cuando las senales presentan ruido, offset de frecuencia, fase aleatoria y desvanecimiento?
+Como se degrada un clasificador de modulaciones entrenado con senales IQ sinteticas de dominio fuente cuando se evalua en dominios objetivo mas realistas, y que tecnicas de adaptacion pueden reducir esa degradacion?
 
 ## Hipotesis
 
-Un clasificador entrenado con rasgos como energia espectral, estadisticas de amplitud/fase, entropia espectral y momentos de constelacion puede reconocer modulaciones digitales con buena precision sin necesitar hardware de radio ni datasets externos.
+Un modelo entrenado solo en senales AWGN de condiciones controladas tendra alta precision dentro de su dominio fuente, pero su rendimiento caera al evaluarse en senales con bajo SNR, mayor offset, fading o multipath. Esa caida puede reducirse progresivamente mediante normalizacion del dominio objetivo, alineamiento estadistico tipo CORAL, fine-tuning con pocas muestras etiquetadas y validacion con datos reales o mas cercanos a reales.
 
 ## Estructura
 
@@ -33,18 +35,22 @@ proyecto_dsp_modulaciones
 |-- notebook_proyecto_modulaciones.ipynb
 |-- requirements.txt
 |-- outputs/
-|   |-- summary.json
-|   |-- confusion_matrix.csv
+|   |-- baseline/
+|   |   |-- summary.json
+|   |   |-- confusion_matrix.csv
+|   |   `-- model_parameters.npz
 |   |-- research/
+|   |-- domain_adaptation/
 |   `-- notebook_assets/
 |-- src/
+|   |-- signal_generator.py
 |   |-- dsp_features.py
+|   |-- simple_mlp.py
 |   |-- experiment.py
 |   |-- predict_demo.py
 |   |-- research_experiments.py
-|   |-- sanity_checks.py
-|   |-- signal_generator.py
-|   `-- simple_mlp.py
+|   |-- domain_adaptation_experiments.py
+|   `-- sanity_checks.py
 ```
 
 ## Instalacion
@@ -56,8 +62,6 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
-
-Si estas usando el Python incluido por Codex, tambien puedes ejecutar los scripts directamente con esa ruta.
 
 ## Verificacion rapida
 
@@ -73,32 +77,29 @@ Este chequeo valida que el generador de senales, la extraccion de rasgos y el ML
 python src\experiment.py
 ```
 
-Guarda:
+Entrena un clasificador MLP en un escenario sintetico controlado y guarda:
 
-- `outputs/summary.json`
-- `outputs/confusion_matrix.csv`
-- `outputs/model_parameters.npz`
+```text
+outputs/baseline/summary.json
+outputs/baseline/confusion_matrix.csv
+outputs/baseline/model_parameters.npz
+```
 
-Resultado inicial reproducido:
+Este experimento sirve como referencia historica. Demuestra que el pipeline DSP + IA puede clasificar modulaciones, pero no es el aporte principal de la investigacion final.
 
-- Accuracy de entrenamiento: 99.4%
-- Accuracy de prueba: 97.9%
-
-La mayor confusion aparece entre QPSK y 8PSK, algo esperable porque ambas modulaciones se diferencian principalmente por resolucion angular de fase.
-
-## Experimentos de investigacion
+## Experimentos de soporte
 
 ```powershell
 python src\research_experiments.py
 ```
 
-Estos experimentos fortalecen la defensa del proyecto:
+Estos experimentos respaldan la base tecnica:
 
-- IA vs baseline DSP de distancia a centroides.
+- Comparacion contra un baseline DSP de distancia a centroides.
 - Validacion con multiples semillas.
-- Robustez por SNR.
-- Ablation study por grupos de features: amplitud, IQ, fase, espectro y todos.
-- Generalizacion a canales no ideales: AWGN, Rayleigh y multipath.
+- Robustez ante SNR.
+- Ablation study por grupos de rasgos.
+- Generalizacion inicial a canales AWGN, Rayleigh y multipath.
 
 Archivos generados:
 
@@ -111,14 +112,57 @@ outputs/research/channel_generalization.csv
 outputs/research/research_summary.json
 ```
 
-Resultados principales:
+Resultados de soporte ya obtenidos:
 
 - Baseline DSP: 82.1%
-- MLP con features DSP: 98.0%
-- El grupo de features de fase fue el mas informativo por separado.
-- El canal multipath fue el escenario mas dificil para generalizacion.
+- MLP con rasgos DSP: 98.0%
+- MLP multisemilla: 98.28% +/- 0.86%
+- El grupo de rasgos de fase fue el mas informativo por separado.
+- El canal multipath fue el escenario mas dificil de generalizacion.
 
-## Notebook principal y documento
+## Experimento principal: cambio de dominio
+
+```powershell
+python src\domain_adaptation_experiments.py
+```
+
+Este experimento entrena el modelo solo en un dominio fuente AWGN y lo prueba en dominios objetivo mas dificiles:
+
+- AWGN con menor SNR y mayor offset.
+- Rayleigh.
+- Multipath.
+- Multipath severo con bajo SNR y offset alto.
+
+Archivos generados:
+
+```text
+outputs/domain_adaptation/domain_shift_baseline.csv
+outputs/domain_adaptation/domain_shift_summary.json
+```
+
+Resultados iniciales:
+
+```text
+Fuente AWGN controlada:        100.0%
+AWGN bajo SNR/offset:           82.9%
+Rayleigh:                       95.7%
+Multipath:                      73.3%
+Multipath severo:               60.1%
+```
+
+Esta caida justifica la investigacion: el modelo no solo debe aprender modulaciones, tambien debe adaptarse a condiciones de recepcion que cambian.
+
+## Ruta de investigacion
+
+La investigacion queda organizada en fases:
+
+1. Diagnostico de cambio de dominio: medir la caida sin adaptacion.
+2. Normalizacion objetivo sin etiquetas: adaptar estadisticas de rasgos al dominio objetivo.
+3. CORAL: alinear covarianzas entre fuente y objetivo.
+4. Few-shot fine-tuning: ajustar el modelo con pocas muestras etiquetadas del dominio objetivo.
+5. Validacion realista: repetir con mas semillas, escenarios severos y eventualmente RadioML o capturas SDR.
+
+## Notebook principal
 
 El proyecto usa un solo notebook principal:
 
@@ -126,8 +170,4 @@ El proyecto usa un solo notebook principal:
 notebook_proyecto_modulaciones.ipynb
 ```
 
-Este notebook unifica la explicacion del problema, las senales IQ, los rasgos DSP, el modelo MLP, las metricas, la validacion multisemilla, robustez por SNR, ablation study y generalizacion de canal. En la entrega publica se mantiene un solo notebook principal para evitar duplicidad.
-
-El documento fuente es `marco_teorico_y_justificacion.md`.
-
-Los scripts generadores usados para construir notebooks y documentos se mantienen solo en la carpeta local de trabajo y no forman parte de la entrega publica del repositorio.
+El notebook debe presentar primero el problema de adaptacion de dominio, luego la base DSP/IA y finalmente los experimentos que muestran la degradacion al cambiar de dominio. Los notebooks antiguos quedan archivados localmente y no forman parte del flujo principal.

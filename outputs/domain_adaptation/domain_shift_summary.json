@@ -1,0 +1,109 @@
+{
+  "title": "Fase 1 - Diagnostico de cambio de dominio para AMC",
+  "objective": "Medir cuanto cae un clasificador entrenado en AWGN cuando se evalua en dominios objetivo mas realistas.",
+  "source_domain": {
+    "channel_model": "awgn",
+    "snr_range_db": [
+      8.0,
+      24.0
+    ],
+    "max_freq_offset": 0.025,
+    "samples_per_class": 260
+  },
+  "model": {
+    "type": "SimpleMLP",
+    "input_features": 36,
+    "hidden_units": 48,
+    "classes": [
+      "BPSK",
+      "QPSK",
+      "8PSK",
+      "16QAM",
+      "2FSK",
+      "4ASK"
+    ]
+  },
+  "results": [
+    {
+      "scenario": "source_holdout_awgn",
+      "train_domain": "awgn_snr_8_24_offset_0.025",
+      "test_channel": "awgn",
+      "test_snr_min_db": 8.0,
+      "test_snr_max_db": 24.0,
+      "test_max_freq_offset": 0.025,
+      "source_ai_accuracy": 1.0,
+      "target_ai_accuracy": 1.0,
+      "ai_accuracy_drop": 0.0,
+      "source_baseline_accuracy": 0.8769,
+      "target_baseline_accuracy": 0.8667,
+      "baseline_accuracy_drop": 0.0103,
+      "description": "Mismo dominio que entrenamiento; sirve como referencia alta."
+    },
+    {
+      "scenario": "target_awgn_low_snr",
+      "train_domain": "awgn_snr_8_24_offset_0.025",
+      "test_channel": "awgn",
+      "test_snr_min_db": 0.0,
+      "test_snr_max_db": 14.0,
+      "test_max_freq_offset": 0.05,
+      "source_ai_accuracy": 1.0,
+      "target_ai_accuracy": 0.8292,
+      "ai_accuracy_drop": 0.1708,
+      "source_baseline_accuracy": 0.8769,
+      "target_baseline_accuracy": 0.4889,
+      "baseline_accuracy_drop": 0.388,
+      "description": "Mismo tipo de canal, pero con menor SNR y mayor offset."
+    },
+    {
+      "scenario": "target_rayleigh",
+      "train_domain": "awgn_snr_8_24_offset_0.025",
+      "test_channel": "rayleigh",
+      "test_snr_min_db": 4.0,
+      "test_snr_max_db": 18.0,
+      "test_max_freq_offset": 0.035,
+      "source_ai_accuracy": 1.0,
+      "target_ai_accuracy": 0.9569,
+      "ai_accuracy_drop": 0.0431,
+      "source_baseline_accuracy": 0.8769,
+      "target_baseline_accuracy": 0.6792,
+      "baseline_accuracy_drop": 0.1978,
+      "description": "Canal Rayleigh: fading plano sin componente dominante."
+    },
+    {
+      "scenario": "target_multipath",
+      "train_domain": "awgn_snr_8_24_offset_0.025",
+      "test_channel": "multipath",
+      "test_snr_min_db": 4.0,
+      "test_snr_max_db": 18.0,
+      "test_max_freq_offset": 0.035,
+      "source_ai_accuracy": 1.0,
+      "target_ai_accuracy": 0.7333,
+      "ai_accuracy_drop": 0.2667,
+      "source_baseline_accuracy": 0.8769,
+      "target_baseline_accuracy": 0.4569,
+      "baseline_accuracy_drop": 0.42,
+      "description": "Canal multipath: mezcla copias retardadas y deforma simbolos."
+    },
+    {
+      "scenario": "target_harsh_multipath",
+      "train_domain": "awgn_snr_8_24_offset_0.025",
+      "test_channel": "multipath",
+      "test_snr_min_db": 0.0,
+      "test_snr_max_db": 12.0,
+      "test_max_freq_offset": 0.06,
+      "source_ai_accuracy": 1.0,
+      "target_ai_accuracy": 0.6014,
+      "ai_accuracy_drop": 0.3986,
+      "source_baseline_accuracy": 0.8769,
+      "target_baseline_accuracy": 0.3431,
+      "baseline_accuracy_drop": 0.5339,
+      "description": "Dominio objetivo mas dificil: multipath, bajo SNR y offset alto."
+    }
+  ],
+  "next_phases": [
+    "Fase 2: probar normalizacion con estadisticas del dominio objetivo sin etiquetas.",
+    "Fase 3: implementar CORAL para alinear covarianzas entre fuente y objetivo.",
+    "Fase 4: usar pocas muestras etiquetadas del objetivo para fine-tuning.",
+    "Fase 5: reemplazar el dominio objetivo sintetico por RadioML o capturas SDR reales."
+  ]
+}

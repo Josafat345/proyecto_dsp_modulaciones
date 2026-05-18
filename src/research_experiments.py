@@ -1,5 +1,12 @@
 from __future__ import annotations
 
+"""Experimentos de soporte para fortalecer la investigacion.
+
+Este archivo no solo entrena un modelo. Genera evidencias para defender el
+proyecto: comparacion contra baseline DSP, estabilidad con semillas, robustez
+por SNR, ablation study y generalizacion de canal.
+"""
+
 import csv
 import json
 from pathlib import Path
@@ -21,6 +28,7 @@ def train_test_split(
     test_fraction: float = 0.28,
     seed: int = 2026,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Separa datos en entrenamiento y prueba con una semilla fija."""
     rng = np.random.default_rng(seed)
     indexes = rng.permutation(len(x))
     test_size = int(len(x) * test_fraction)
@@ -30,6 +38,7 @@ def train_test_split(
 
 
 def nearest_centroid_fit(x_train: np.ndarray, y_train: np.ndarray, n_classes: int) -> np.ndarray:
+    """Calcula el centroide promedio de cada clase en el espacio de rasgos."""
     centroids = []
     for label in range(n_classes):
         centroids.append(x_train[y_train == label].mean(axis=0))
@@ -37,6 +46,7 @@ def nearest_centroid_fit(x_train: np.ndarray, y_train: np.ndarray, n_classes: in
 
 
 def nearest_centroid_predict(x: np.ndarray, centroids: np.ndarray) -> np.ndarray:
+    """Clasifica cada muestra usando el centroide mas cercano."""
     distances = ((x[:, None, :] - centroids[None, :, :]) ** 2).sum(axis=2)
     return np.argmin(distances, axis=1)
 
@@ -48,12 +58,18 @@ def fit_models(
     seed: int = 2026,
     epochs: int = 110,
 ) -> dict:
+    """Entrena baseline y MLP usando todos o un subconjunto de rasgos.
+
+    feature_indexes permite correr el ablation study: se entrena con solo
+    amplitud, solo fase, solo espectro, etc.
+    """
     if feature_indexes is not None:
         x = x[:, feature_indexes]
 
     x_train, x_test, y_train, y_test = train_test_split(x, y, seed=seed)
     x_train_std, x_test_std, mean, std = standardize_train_test(x_train, x_test)
 
+    # Baseline clasico: no aprende fronteras complejas, solo promedios por clase.
     baseline_centroids = nearest_centroid_fit(x_train_std, y_train, len(MODULATIONS))
     baseline_pred = nearest_centroid_predict(x_test_std, baseline_centroids)
 
@@ -79,6 +95,7 @@ def evaluate_trained_models(
     signals: np.ndarray,
     y: np.ndarray,
 ) -> tuple[float, float]:
+    """Evalua modelos ya entrenados en un nuevo conjunto de senales."""
     x = extract_feature_matrix(signals)
     indexes = bundle["feature_indexes"]
     if indexes is not None:
@@ -90,6 +107,7 @@ def evaluate_trained_models(
 
 
 def write_csv(path: Path, headers: list[str], rows: list[dict]) -> None:
+    """Escribe resultados tabulares para analizarlos en notebook o Excel."""
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=headers)
@@ -98,6 +116,7 @@ def write_csv(path: Path, headers: list[str], rows: list[dict]) -> None:
 
 
 def round_row(row: dict) -> dict:
+    """Redondea valores flotantes para que los CSV sean mas legibles."""
     rounded = {}
     for key, value in row.items():
         if isinstance(value, float):
@@ -108,6 +127,7 @@ def round_row(row: dict) -> dict:
 
 
 def summarize_metric(rows: list[dict], key: str) -> dict:
+    """Calcula media, desviacion, minimo y maximo de una metrica."""
     values = np.asarray([float(row[key]) for row in rows], dtype=float)
     return {
         "mean": round(float(values.mean()), 4),
@@ -118,8 +138,10 @@ def summarize_metric(rows: list[dict], key: str) -> dict:
 
 
 def main() -> None:
+    """Ejecuta todos los experimentos de soporte."""
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Experimento 1: comprobar que el MLP aporta sobre un baseline clasico.
     print("Generando dataset base AWGN para comparacion IA vs baseline...")
     signals, y, labels = generate_dataset(samples_per_class=240, snr_range_db=(4.0, 24.0), channel_model="awgn", seed=100)
     x = extract_feature_matrix(signals)
@@ -131,6 +153,8 @@ def main() -> None:
     ]
     write_csv(OUTPUT_DIR / "baseline_vs_ai.csv", ["modelo", "accuracy"], baseline_rows)
 
+    # Experimento 2: repetir con semillas diferentes para evitar depender de
+    # una corrida "afortunada".
     print("Repitiendo validacion con multiples semillas...")
     repeated_rows = []
     repeated_seeds = [410, 411, 412, 413, 414]
@@ -165,6 +189,7 @@ def main() -> None:
         repeated_rows,
     )
 
+    # Experimento 3: medir sensibilidad al ruido.
     print("Evaluando robustez por SNR...")
     snr_rows = []
     for snr in [-5, 0, 5, 10, 15, 20, 25]:
@@ -178,6 +203,7 @@ def main() -> None:
         snr_rows.append(round_row({"snr_db": snr, "baseline_accuracy": baseline_acc, "ai_accuracy": ai_acc}))
     write_csv(OUTPUT_DIR / "snr_sweep.csv", ["snr_db", "baseline_accuracy", "ai_accuracy"], snr_rows)
 
+    # Experimento 4: saber que grupos de rasgos son mas informativos.
     print("Ejecutando ablation study por grupos de features...")
     ablation_rows = []
     for group_name, indexes in FEATURE_GROUPS.items():
@@ -194,6 +220,7 @@ def main() -> None:
         )
     write_csv(OUTPUT_DIR / "ablation_features.csv", ["grupo_features", "n_features", "baseline_accuracy", "ai_accuracy"], ablation_rows)
 
+    # Experimento 5: entrenar en AWGN y probar en otros canales.
     print("Evaluando generalizacion a canales no ideales...")
     channel_rows = []
     for channel_model in ["awgn", "rayleigh", "multipath"]:

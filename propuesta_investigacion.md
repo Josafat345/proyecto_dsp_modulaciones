@@ -2,92 +2,140 @@
 
 ## Titulo tentativo
 
-Reconocimiento inteligente de modulaciones digitales mediante procesamiento digital de senales y aprendizaje automatico ligero
+Adaptacion de dominio para reconocimiento automatico de modulaciones digitales usando senales IQ sinteticas, rasgos DSP e inteligencia artificial ligera
 
 ## Planteamiento del problema
 
-En sistemas de comunicaciones modernas, identificar automaticamente el esquema de modulacion de una senal puede ser util para monitoreo de espectro, radio cognitiva, diagnostico de enlaces y sistemas educativos de telecomunicaciones. Sin embargo, muchos enfoques requieren equipos de radio, datasets externos o modelos profundos pesados.
+La clasificacion automatica de modulaciones permite que un receptor identifique el esquema de transmision de una senal sin conocerlo previamente. Esta capacidad es relevante en radio cognitiva, monitoreo de espectro, diagnostico de enlaces, sistemas de comunicacion adaptativos y ambientes educativos de telecomunicaciones.
 
-Este proyecto propone una alternativa reproducible: generar senales IQ de forma sintetica, degradarlas con efectos realistas de canal y entrenar un modelo de IA ligero usando rasgos DSP compactos.
+El problema es que muchos modelos se entrenan y evaluan bajo condiciones parecidas. En esos casos, el accuracy puede ser alto, pero el resultado no necesariamente indica que el sistema funcionara cuando cambien las condiciones de recepcion. En un entorno mas realista, una senal puede llegar con menor SNR, offset de frecuencia, fase aleatoria, desvanecimiento, multipath, variacion de ganancia o distorsiones del receptor.
+
+Por eso, el reto investigativo de este proyecto no es solamente clasificar modulaciones. El reto es estudiar la brecha entre un dominio fuente sintetico controlado y un dominio objetivo mas dificil, y evaluar estrategias para reducir la perdida de rendimiento cuando el modelo se mueve entre ambos dominios.
+
+## Pregunta de investigacion
+
+Como se degrada un clasificador de modulaciones entrenado con senales IQ sinteticas de dominio fuente al evaluarse en dominios objetivo mas realistas, y que tecnicas de adaptacion de dominio pueden reducir esa degradacion?
+
+## Hipotesis
+
+Un clasificador MLP entrenado sobre rasgos DSP de senales AWGN controladas lograra alta precision dentro del dominio fuente, pero perdera rendimiento al evaluarse en senales con bajo SNR, mayor offset, fading y multipath. La degradacion puede reducirse progresivamente mediante normalizacion del dominio objetivo sin etiquetas, alineamiento estadistico tipo CORAL y fine-tuning con pocas muestras etiquetadas del dominio objetivo.
 
 ## Objetivo general
 
-Desarrollar y evaluar un sistema de clasificacion automatica de modulaciones digitales basado en senales IQ sinteticas, extraccion de rasgos DSP y un clasificador neuronal implementado en codigo.
+Desarrollar y evaluar un prototipo de adaptacion de dominio para clasificacion automatica de modulaciones digitales, usando senales IQ sinteticas, rasgos DSP interpretables y un modelo de IA ligero.
 
 ## Objetivos especificos
 
-1. Generar senales IQ para BPSK, QPSK, 8PSK, 16QAM, 2FSK y 4ASK.
-2. Incorporar efectos de canal: ruido AWGN, offset de frecuencia, fase aleatoria y variacion de ganancia.
-3. Extraer rasgos DSP de amplitud, fase, espectro y constelacion.
-4. Entrenar un modelo de IA ligero para clasificar la modulacion.
-5. Evaluar el desempeno con matriz de confusion, accuracy y analisis por clase.
+1. Generar senales IQ sinteticas para BPSK, QPSK, 8PSK, 16QAM, 2FSK y 4ASK.
+2. Simular dominios fuente y objetivo con distintas condiciones de SNR, offset de frecuencia y canal.
+3. Extraer rasgos DSP de amplitud, componentes I/Q, fase y espectro.
+4. Entrenar un clasificador MLP ligero sobre el dominio fuente.
+5. Medir la caida de rendimiento al evaluar en dominios objetivo.
+6. Comparar el modelo contra un baseline DSP basado en distancia a centroides.
+7. Implementar tecnicas progresivas de adaptacion de dominio.
+8. Evaluar estabilidad con multiples semillas, escenarios de canal y metricas por clase.
 
-## Metodologia
+## Alcance actual
 
-1. Simulacion de datos:
-   - Se generan secuencias aleatorias de simbolos.
-   - Se mapean a constelaciones digitales.
-   - Se sobremuestrean y se pasan por un canal simulado.
+El proyecto ya cuenta con una base funcional:
 
-2. Procesamiento DSP:
-   - Normalizacion de energia.
-   - Calculo de estadisticas de amplitud y fase.
-   - FFT para obtener rasgos espectrales.
-   - Calculo de entropia espectral, ancho de banda efectivo y relacion pico/promedio.
+- Generador de senales IQ para seis modulaciones digitales.
+- Canal con AWGN, Rayleigh y multipath.
+- Extraccion de 36 rasgos DSP.
+- Modelo MLP implementado en NumPy.
+- Baseline DSP de distancia a centroides.
+- Validacion multisemilla, barrido por SNR y ablation study.
+- Diagnostico inicial de cambio de dominio.
 
-3. Modelo de IA:
-   - Red neuronal multicapa sencilla implementada en NumPy.
-   - Entrada: vector de rasgos DSP.
-   - Salida: probabilidad por tipo de modulacion.
+Resultados iniciales del diagnostico:
 
-4. Evaluacion:
-   - Division entrenamiento/prueba.
-   - Accuracy global.
-   - Matriz de confusion.
-   - Analisis de errores por modulacion.
-   - Repeticion con multiples semillas para estimar estabilidad del resultado.
+```text
+Fuente AWGN controlada:        100.0%
+AWGN bajo SNR/offset:           82.9%
+Rayleigh:                       95.7%
+Multipath:                      73.3%
+Multipath severo:               60.1%
+```
 
-5. Experimentos de investigacion:
-   - Comparacion IA vs baseline DSP por distancia a centroides.
-   - Validacion multisemilla para evitar depender de una unica corrida favorable.
-   - Barrido de SNR para medir robustez ante ruido.
-   - Ablation study para estimar el aporte de grupos de rasgos.
-   - Prueba de generalizacion entrenando en AWGN y evaluando en AWGN, Rayleigh y multipath.
+Estos resultados muestran que el modelo no falla de manera uniforme: el cambio de canal, el bajo SNR y el multipath producen una degradacion clara. Esa degradacion es la motivacion central de la investigacion.
+
+## Antecedentes y posicionamiento
+
+La clasificacion automatica de modulaciones ya es un tema trabajado en comunicaciones digitales. Existen enfoques clasicos basados en rasgos, enfoques basados en verosimilitud y propuestas recientes con redes profundas sobre senales IQ. Tambien existen trabajos de transferencia y adaptacion de dominio aplicados a reconocimiento de modulaciones.
+
+Por esa razon, esta propuesta no debe presentarse como "el primer clasificador de modulaciones con IA". La vision mas defendible es otra: construir un prototipo ligero, interpretable y reproducible que mida la brecha entre entrenamiento sintetico y evaluacion en condiciones objetivo mas realistas, y que compare tecnicas simples de adaptacion antes de recurrir a modelos profundos pesados.
+
+El aporte diferencial se ubica en cuatro puntos:
+
+1. **Interpretabilidad:** el modelo usa rasgos DSP medibles, no solo muestras IQ crudas.
+2. **Bajo costo:** el clasificador esta implementado en NumPy y puede ejecutarse sin GPU.
+3. **Ruta progresiva:** se evalua la degradacion sin adaptacion y luego se proponen mejoras por etapas.
+4. **Valor academico:** el proyecto permite explicar comunicacion digital, canal, SNR, features, modelo y adaptacion de dominio dentro de un mismo flujo reproducible.
+
+La investigacion queda mejor posicionada como un estudio de **recuperacion de rendimiento ante cambio de dominio**, no como una competencia directa contra arquitecturas profundas de estado del arte.
+
+## Metodologia propuesta
+
+### Fase 1: Diagnostico de cambio de dominio
+
+Se entrena el modelo en un dominio fuente AWGN con SNR relativamente alto y offset moderado. Luego se evalua en varios dominios objetivo mas dificiles. Esta fase mide la brecha inicial sin adaptacion.
+
+### Fase 2: Normalizacion objetivo sin etiquetas
+
+Se asume que existen senales del dominio objetivo, pero no sus etiquetas. Se calculan estadisticas del dominio objetivo y se usan para normalizar los rasgos antes de clasificarlos. Esta fase evalua si una adaptacion simple de estadisticas reduce la caida.
+
+### Fase 3: Alineamiento CORAL
+
+Se aplica CORAL para alinear la covarianza de los rasgos fuente con la covarianza del dominio objetivo. Esto busca que las distribuciones de features sean mas compatibles sin requerir etiquetas del dominio objetivo.
+
+### Fase 4: Fine-tuning con pocas muestras
+
+Se simula un caso donde el investigador tiene pocas senales etiquetadas del dominio objetivo. El modelo se ajusta con esas muestras y se mide si mejora sin sobreajustarse.
+
+### Fase 5: Validacion extendida
+
+Se repiten los experimentos con diferentes semillas, rangos de SNR, canales y matrices de confusion. Como extension fuerte, el dominio objetivo puede reemplazarse por RadioML o por capturas SDR reales.
+
+## Variables y metricas
+
+Variables independientes:
+
+- Tipo de canal: AWGN, Rayleigh, multipath y posibles extensiones Rician.
+- Rango de SNR.
+- Offset de frecuencia.
+- Estrategia de adaptacion: ninguna, normalizacion objetivo, CORAL, fine-tuning.
+- Cantidad de muestras etiquetadas del dominio objetivo.
+
+Metricas:
+
+- Accuracy global.
+- Caida de accuracy respecto al dominio fuente.
+- Accuracy por clase.
+- Matriz de confusion.
+- Media y desviacion estandar con multiples semillas.
+- Diferencia entre MLP y baseline DSP.
 
 ## Innovacion
 
-El proyecto combina simulacion completa por codigo, DSP interpretable e IA ligera. No depende de hardware SDR ni datasets externos. Ademas, permite explicar las decisiones del modelo a partir de rasgos fisicos de la senal.
+El valor del proyecto esta en construir una ruta reproducible entre simulacion y operacion realista. La investigacion combina tres ideas:
 
-## Diseno experimental fortalecido
+1. Senales IQ sinteticas controlables por codigo.
+2. Rasgos DSP interpretables que permiten explicar el comportamiento del modelo.
+3. Adaptacion de dominio para estudiar la brecha entre entrenamiento sintetico y prueba realista.
 
-La version extendida no se limita a reportar accuracy. Se proponen cinco preguntas medibles:
+Esto diferencia el trabajo de una clasificacion comun de modulaciones. El aporte no es decir que un MLP clasifica BPSK o QPSK, sino analizar cuando deja de funcionar, por que ocurre y que estrategias reducen esa perdida.
 
-1. ¿La IA mejora frente a un baseline DSP clasico?
-2. ¿El resultado se mantiene estable al repetir el experimento con distintas semillas?
-3. ¿A partir de que SNR el sistema se vuelve confiable?
-4. ¿Que grupos de rasgos aportan mas informacion?
-5. ¿El modelo generaliza cuando el canal cambia de AWGN a Rayleigh o multipath?
+## Entregables esperados
 
-Resultados iniciales:
-
-- El MLP con rasgos DSP alcanzo 98.0% de accuracy frente a 82.1% del baseline de distancia a centroides.
-- La validacion con multiples semillas reporta media y desviacion estandar para que el resultado sea mas defendible.
-- En el barrido por SNR, el modelo mejora claramente a partir de 5 dB y se vuelve casi perfecto desde 10 dB en el escenario simulado.
-- En el ablation study, los rasgos de fase fueron los mas fuertes de forma aislada.
-- Multipath fue el escenario mas dificil, bajando el accuracy del MLP a 84.6%, lo cual abre una linea de mejora realista.
-
-## Posibles extensiones
-
-- Usar espectrogramas como imagenes y entrenar una CNN.
-- Comparar el MLP contra un clasificador basado en reglas.
-- Evaluar robustez variando SNR.
-- Incorporar canales Rayleigh/Rician.
-- Crear una interfaz para visualizar senal temporal, FFT, constelacion y prediccion.
-- Integrar un modelo tipo Audio Spectrogram Transformer si se instala PyTorch/Hugging Face.
+- Notebook principal con explicacion teorica, metodologia, graficas y resultados.
+- Scripts reproducibles en `src/`.
+- Resultados CSV/JSON organizados por fase experimental.
+- Documento de marco teorico y justificacion.
+- Comparacion clara entre baseline DSP, MLP sin adaptacion y MLP con adaptacion.
 
 ## Referencias base
 
 - Dobre, O. A. et al. Survey of automatic modulation classification techniques: classical approaches and new trends.
-- Harper, C. A., Thornton, M. A. and Larson, E. C. Automatic Modulation Classification with Deep Neural Networks, Electronics, 2023.
-- Gong, Y. et al. AST: Audio Spectrogram Transformer, Interspeech 2021.
-- PyTorch Audio documentation: torchaudio pipelines and audio processing utilities.
+- O'Shea, T. y West, N. RadioML 2016.10a Dataset.
+- Sun, B., Feng, J. y Saenko, K. Return of Frustratingly Easy Domain Adaptation.
+- Harper, C. A., Thornton, M. A. y Larson, E. C. Automatic Modulation Classification with Deep Neural Networks.

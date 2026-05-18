@@ -1,0 +1,6 @@
+scenario,train_domain,test_channel,test_snr_min_db,test_snr_max_db,test_max_freq_offset,source_ai_accuracy,target_ai_accuracy,ai_accuracy_drop,source_baseline_accuracy,target_baseline_accuracy,baseline_accuracy_drop,description
+source_holdout_awgn,awgn_snr_8_24_offset_0.025,awgn,8.0,24.0,0.025,1.0,1.0,0.0,0.8769,0.8667,0.0103,Mismo dominio que entrenamiento; sirve como referencia alta.
+target_awgn_low_snr,awgn_snr_8_24_offset_0.025,awgn,0.0,14.0,0.05,1.0,0.8292,0.1708,0.8769,0.4889,0.388,"Mismo tipo de canal, pero con menor SNR y mayor offset."
+target_rayleigh,awgn_snr_8_24_offset_0.025,rayleigh,4.0,18.0,0.035,1.0,0.9569,0.0431,0.8769,0.6792,0.1978,Canal Rayleigh: fading plano sin componente dominante.
+target_multipath,awgn_snr_8_24_offset_0.025,multipath,4.0,18.0,0.035,1.0,0.7333,0.2667,0.8769,0.4569,0.42,Canal multipath: mezcla copias retardadas y deforma simbolos.
+target_harsh_multipath,awgn_snr_8_24_offset_0.025,multipath,0.0,12.0,0.06,1.0,0.6014,0.3986,0.8769,0.3431,0.5339,"Dominio objetivo mas dificil: multipath, bajo SNR y offset alto."

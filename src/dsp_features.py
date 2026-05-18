@@ -1,8 +1,17 @@
 from __future__ import annotations
 
+"""Extraccion de rasgos DSP para convertir senales IQ en vectores numericos.
+
+El modelo de IA no recibe la senal cruda completa. Primero se calculan rasgos
+fisicos de amplitud, componentes I/Q, fase y espectro. Esto hace que el
+proyecto sea mas explicable ante el asesor: cada entrada del modelo tiene una
+interpretacion relacionada con comunicaciones digitales.
+"""
+
 import numpy as np
 
 
+# Rasgos base: estadisticas directas de amplitud, I/Q, fase y frecuencia.
 BASE_FEATURE_NAMES = [
     "amp_mean",
     "amp_std",
@@ -34,8 +43,11 @@ DELAY_PHASE_FEATURE_NAMES = [
     f"delay_phase_lag{lag}_order{order}" for lag in (1, 2, 4, 8) for order in (2, 4, 8)
 ]
 
+# Lista completa de nombres. El MLP recibe un vector con esta longitud.
 FEATURE_NAMES = BASE_FEATURE_NAMES + DELAY_PHASE_FEATURE_NAMES
 
+# Agrupaciones usadas en el ablation study para medir que familia de rasgos
+# aporta mas informacion a la clasificacion.
 FEATURE_GROUPS = {
     "amplitud": [0, 1, 2, 3, 4, 12, 13, 14, 21],
     "iq": [5, 6, 7, 8, 9, 22, 23],
@@ -46,11 +58,17 @@ FEATURE_GROUPS = {
 
 
 def _safe_std(values: np.ndarray) -> float:
+    """Calcula desviacion estandar evitando valores no finitos."""
     value = float(np.std(values))
     return value if np.isfinite(value) else 0.0
 
 
 def spectral_entropy(power_spectrum: np.ndarray) -> float:
+    """Mide que tan repartida esta la energia en frecuencia.
+
+    Entropia baja: la energia se concentra en pocas frecuencias.
+    Entropia alta: la energia esta mas dispersa.
+    """
     p = np.maximum(power_spectrum, 1e-12)
     p = p / np.sum(p)
     entropy = -np.sum(p * np.log2(p))
@@ -58,6 +76,7 @@ def spectral_entropy(power_spectrum: np.ndarray) -> float:
 
 
 def effective_bandwidth(power_spectrum: np.ndarray, threshold: float = 0.9) -> float:
+    """Calcula el ancho de banda que contiene un porcentaje de la energia."""
     p = np.maximum(power_spectrum, 1e-12)
     p = p / np.sum(p)
     center = len(p) // 2
@@ -68,6 +87,14 @@ def effective_bandwidth(power_spectrum: np.ndarray, threshold: float = 0.9) -> f
 
 
 def extract_features(signal: np.ndarray) -> np.ndarray:
+    """Extrae el vector de rasgos DSP de una sola senal IQ.
+
+    Pasos principales:
+    1. Centrar y normalizar energia.
+    2. Separar amplitud, fase, I y Q.
+    3. Calcular rasgos espectrales con FFT.
+    4. Calcular rasgos de fase con retardos.
+    """
     signal = signal.astype(complex)
     signal = signal - np.mean(signal)
     rms = np.sqrt(np.mean(np.abs(signal) ** 2)) + 1e-12
@@ -79,6 +106,7 @@ def extract_features(signal: np.ndarray) -> np.ndarray:
     i = np.real(signal)
     q = np.imag(signal)
 
+    # La ventana de Hanning reduce discontinuidades en los bordes antes de la FFT.
     fft = np.fft.fftshift(np.fft.fft(signal * np.hanning(len(signal))))
     power = np.abs(fft) ** 2
     power = power / (np.sum(power) + 1e-12)
@@ -88,11 +116,16 @@ def extract_features(signal: np.ndarray) -> np.ndarray:
 
     delay_phase_features: list[float] = []
     for lag in (1, 2, 4, 8):
+        # Producto con una version retardada: captura cambios de fase entre
+        # muestras separadas por distintos lags. Es util para PSK y FSK.
         delayed_product = signal[lag:] * np.conj(signal[:-lag])
         delayed_phase = np.angle(delayed_product)
         for order in (2, 4, 8):
+            # Momentos circulares: valores altos indican patrones de fase
+            # repetitivos compatibles con ciertas modulaciones.
             delay_phase_features.append(float(np.abs(np.mean(np.exp(1j * order * delayed_phase)))))
 
+    # El orden de esta lista debe coincidir con FEATURE_NAMES.
     features = [
         float(np.mean(amplitude)),
         _safe_std(amplitude),
@@ -124,6 +157,7 @@ def extract_features(signal: np.ndarray) -> np.ndarray:
 
 
 def extract_feature_matrix(signals: np.ndarray) -> np.ndarray:
+    """Convierte muchas senales IQ en una matriz de features."""
     return np.vstack([extract_features(signal) for signal in signals])
 
 
@@ -131,6 +165,11 @@ def standardize_train_test(
     x_train: np.ndarray,
     x_test: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Estandariza features usando solo estadisticas del entrenamiento.
+
+    Esto evita fuga de informacion: el conjunto de prueba se transforma con
+    la media y desviacion calculadas en entrenamiento.
+    """
     mean = x_train.mean(axis=0)
     std = x_train.std(axis=0) + 1e-9
     return (x_train - mean) / std, (x_test - mean) / std, mean, std

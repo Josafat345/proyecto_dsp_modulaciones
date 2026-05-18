@@ -2,7 +2,7 @@
 
 ## Titulo del proyecto
 
-**Evaluacion de robustez y explicabilidad de un clasificador inteligente de modulaciones digitales basado en rasgos DSP bajo condiciones de canal no ideales**
+**Adaptacion de dominio para reconocimiento automatico de modulaciones digitales usando senales IQ sinteticas, rasgos DSP e inteligencia artificial ligera**
 
 ## 1. Introduccion
 
@@ -10,7 +10,9 @@ En los sistemas modernos de comunicacion digital, la informacion se transmite mo
 
 La identificacion automatica de modulaciones, conocida en ingles como **Automatic Modulation Classification** (AMC), consiste en determinar que tipo de modulacion tiene una senal recibida sin conocer de antemano los datos transmitidos. Este problema es importante porque en un receptor inteligente no siempre se conoce el formato de la senal que llega. Antes de demodularla correctamente, el sistema necesita reconocer que tipo de modulacion esta observando.
 
-En este proyecto se desarrolla un sistema que genera senales digitales sinteticas, les aplica condiciones de canal no ideales y luego usa procesamiento digital de senales (DSP) junto con un modelo de inteligencia artificial para clasificarlas. La investigacion busca responder si un modelo ligero, entrenado con rasgos DSP interpretables, puede reconocer modulaciones digitales de forma robusta frente a ruido, desplazamientos de fase/frecuencia y cambios de canal.
+En este proyecto se desarrolla un sistema que genera senales digitales sinteticas, les aplica condiciones de canal no ideales y luego usa procesamiento digital de senales (DSP) junto con un modelo de inteligencia artificial para clasificarlas. La investigacion actual va un paso mas alla: no solo busca demostrar que el clasificador funciona en datos sinteticos, sino medir que ocurre cuando el modelo entrenado en un dominio fuente controlado se prueba en dominios objetivo mas realistas.
+
+El eje central pasa a ser la **adaptacion de dominio**. En otras palabras, se estudia la brecha entre entrenar con senales simuladas relativamente limpias y evaluar con senales afectadas por bajo SNR, mayor offset de frecuencia, fading y multipath. Esta brecha es importante porque un modelo puede obtener alto accuracy en laboratorio y aun asi degradarse cuando cambian las condiciones de recepcion.
 
 ## 2. Por que se hace esta investigacion
 
@@ -23,7 +25,18 @@ La motivacion principal es estudiar si se puede construir una solucion que combi
 
 El proyecto tambien tiene valor academico porque permite estudiar conceptos de telecomunicaciones de una forma reproducible. No se requiere radio definida por software, antenas ni datasets externos. Todas las senales se generan por codigo, lo que permite controlar el tipo de modulacion, el nivel de ruido, el canal y las condiciones del experimento.
 
-La investigacion no se limita a entrenar un modelo y reportar accuracy. Tambien compara contra un baseline DSP, evalua robustez por SNR, estudia que grupos de rasgos aportan mas informacion y prueba generalizacion a canales no ideales. Esto la hace mas fuerte porque responde preguntas medibles y no solo presenta una demostracion.
+La investigacion no se limita a entrenar un modelo y reportar accuracy. Tambien compara contra un baseline DSP, evalua robustez por SNR, estudia que grupos de rasgos aportan mas informacion y prueba generalizacion a canales no ideales. Con el nuevo enfoque, estas pruebas quedan como soporte para una pregunta mas fuerte: como reducir la caida de rendimiento cuando existe cambio de dominio entre el entrenamiento y la evaluacion.
+
+### 2.1 Por que la adaptacion de dominio fortalece el proyecto
+
+Una investigacion sobre clasificacion de modulaciones puede quedarse corta si solo muestra que un modelo reconoce senales generadas con el mismo simulador usado para entrenar. Ese resultado es util, pero ya ha sido explorado ampliamente en la literatura.
+
+La adaptacion de dominio vuelve el problema mas realista porque introduce una separacion entre:
+
+- **Dominio fuente:** datos usados para entrenar, por ejemplo senales AWGN con SNR relativamente alto.
+- **Dominio objetivo:** datos donde se quiere aplicar el modelo, por ejemplo senales con bajo SNR, multipath o fading.
+
+La pregunta ya no es "cuanto accuracy tengo en mi simulador", sino "cuanto accuracy pierdo cuando el dominio cambia y que tecnica ayuda a recuperarlo". Esta formulacion hace que el proyecto sea mas defendible porque identifica una limitacion real y propone una ruta experimental para resolverla.
 
 ## 3. Conceptos basicos necesarios
 
@@ -352,6 +365,8 @@ La investigacion incluye comparaciones y pruebas:
 - Evaluacion por SNR.
 - Ablation study.
 - Generalizacion de canal.
+- Diagnostico de cambio de dominio.
+- Ruta progresiva de adaptacion: normalizacion objetivo, CORAL y fine-tuning.
 
 Estas pruebas permiten defender el proyecto como investigacion y no solo como aplicacion.
 
@@ -363,7 +378,8 @@ Aunque los resultados iniciales son buenos, el proyecto tiene limitaciones:
 - El canal multipath usado es una aproximacion simple.
 - No se han probado datasets reales como RadioML.
 - El modelo no usa aprendizaje profundo sobre senales crudas.
-- No se reportan todavia medias y desviaciones con multiples semillas.
+- La adaptacion de dominio todavia esta en fase diagnostica.
+- Aun no se implementan CORAL ni fine-tuning con muestras del dominio objetivo.
 - No se mide tiempo de inferencia ni complejidad computacional.
 
 Estas limitaciones no debilitan el proyecto; al contrario, permiten proponer mejoras claras para una siguiente etapa.
@@ -372,29 +388,32 @@ Estas limitaciones no debilitan el proyecto; al contrario, permiten proponer mej
 
 Para llevar el proyecto a un nivel mas cercano a publicacion o tesis, se recomienda:
 
-1. Repetir los experimentos con varias semillas y reportar media/desviacion estandar.
-2. Entrenar tambien con canales Rayleigh y multipath.
-3. Evaluar con SNR mas fino, por ejemplo de -10 dB a 25 dB en pasos de 2 dB.
-4. Comparar contra modelos adicionales como KNN, regresion logistica o SVM.
-5. Implementar una CNN con espectrogramas si se instala PyTorch.
-6. Probar datasets publicos como RadioML.
-7. Medir tiempo de inferencia y numero de parametros.
-8. Analizar errores individuales mostrando constelacion, espectro y prediccion.
+1. Implementar normalizacion con estadisticas del dominio objetivo sin usar etiquetas.
+2. Implementar CORAL para alinear la covarianza de los rasgos fuente y objetivo.
+3. Probar fine-tuning con pocas muestras etiquetadas del dominio objetivo.
+4. Repetir los experimentos de adaptacion con varias semillas y reportar media/desviacion estandar.
+5. Evaluar con SNR mas fino, por ejemplo de -10 dB a 25 dB en pasos de 2 dB.
+6. Comparar contra modelos adicionales como KNN, regresion logistica o SVM.
+7. Probar datasets publicos como RadioML o capturas SDR reales.
+8. Medir tiempo de inferencia, numero de parametros y costo computacional.
+9. Analizar errores individuales mostrando constelacion, espectro y prediccion.
 
 ## 13. Explicacion sencilla para presentar al asesor
 
 Una forma clara de explicar el proyecto es:
 
-> Este proyecto busca reconocer automaticamente que tipo de modulacion tiene una senal digital. Para hacerlo, primero genero senales IQ sinteticas de diferentes modulaciones, luego simulo ruido y efectos de canal, extraigo rasgos DSP de amplitud, fase y espectro, y finalmente entreno un modelo de IA ligero para clasificarlas. La parte investigativa esta en evaluar si la IA mejora frente a un baseline DSP, como se comporta ante diferentes SNR, que rasgos aportan mas informacion y que ocurre cuando el canal cambia.
+> Este proyecto parte del reconocimiento automatico de modulaciones digitales, pero no se queda solo en clasificar senales sinteticas. Primero se construye una base reproducible con senales IQ, rasgos DSP y un MLP ligero. Luego se mide que ocurre cuando el modelo entrenado en un dominio fuente AWGN se evalua en dominios objetivo mas dificiles, como bajo SNR y multipath. La parte investigativa esta en cuantificar esa caida y proponer una ruta de adaptacion de dominio para recuperar rendimiento sin depender inmediatamente de modelos profundos pesados.
 
 En una reunion, se puede resumir asi:
 
-- **Problema:** identificar modulaciones digitales bajo condiciones no ideales.
-- **Metodo:** senales IQ + DSP + MLP.
-- **Comparacion:** IA contra baseline DSP.
-- **Robustez:** pruebas por SNR y canal.
+- **Problema:** un clasificador entrenado en senales sinteticas puede perder rendimiento al aplicarse en condiciones mas realistas.
+- **Metodo:** senales IQ + rasgos DSP + MLP ligero.
+- **Comparacion:** MLP contra baseline DSP y contra escenarios sin adaptacion.
+- **Robustez:** pruebas por SNR, canal, offset y multipath.
 - **Explicabilidad:** ablation study de rasgos.
-- **Resultado inicial:** el MLP supera al baseline y el multipath aparece como principal reto.
+- **Resultado inicial:** el MLP funciona muy bien en fuente AWGN, pero cae hasta 60.1% en multipath severo.
+- **Aporte:** proponer una ruta para reducir esa caida mediante adaptacion de dominio.
+- **Diferenciacion:** no se vende como "primer AMC con IA"; se presenta como una investigacion ligera, interpretable y reproducible sobre recuperacion de rendimiento ante cambio de dominio.
 
 ## 14. Bibliografia y referencias recomendadas
 
@@ -402,4 +421,4 @@ En una reunion, se puede resumir asi:
 - O'Shea, T. J., Corgan, J. y Clancy, T. C. (2016). *Convolutional Radio Modulation Recognition Networks*. arXiv. Disponible en: https://arxiv.org/abs/1602.04105
 - O'Shea, T. J., Corgan, J. y Clancy, T. C. (2016). *Unsupervised Representation Learning of Structured Radio Communication Signals*. arXiv. Disponible en: https://arxiv.org/abs/1604.07078
 - O'Shea, T. y West, N. (2016). *RadioML 2016.10a Dataset*. Zenodo. Disponible en: https://zenodo.org/records/18397070
-
+- Sun, B., Feng, J. y Saenko, K. (2016). *Return of Frustratingly Easy Domain Adaptation*. AAAI.

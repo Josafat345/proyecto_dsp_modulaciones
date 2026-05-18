@@ -1,5 +1,12 @@
 from __future__ import annotations
 
+"""Pruebas rapidas para verificar que el proyecto sigue funcionando.
+
+No reemplaza una suite completa de tests, pero sirve para comprobar que los
+componentes principales encajan: generador, features, division train/test,
+normalizacion y entrenamiento minimo del MLP.
+"""
+
 import numpy as np
 
 from dsp_features import FEATURE_NAMES, extract_feature_matrix, standardize_train_test
@@ -9,6 +16,8 @@ from simple_mlp import SimpleMLP, accuracy
 
 
 def main() -> None:
+    """Ejecuta validaciones pequenas con asserts."""
+    # Dataset intencionalmente pequeno para que el chequeo corra rapido.
     signals, y, labels = generate_dataset(
         samples_per_class=8,
         n_symbols=32,
@@ -18,14 +27,17 @@ def main() -> None:
     )
 
     expected_signal_count = len(MODULATIONS) * 8
+    # Validaciones del generador.
     assert signals.shape == (expected_signal_count, 128)
     assert labels == list(MODULATIONS)
     assert set(y.tolist()) == set(range(len(MODULATIONS)))
 
+    # Validaciones de extraccion DSP.
     x = extract_feature_matrix(signals)
     assert x.shape == (expected_signal_count, len(FEATURE_NAMES))
     assert np.isfinite(x).all()
 
+    # Validaciones del flujo de entrenamiento.
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_fraction=0.3, seed=2026)
     x_train, x_test, _, _ = standardize_train_test(x_train, x_test)
 

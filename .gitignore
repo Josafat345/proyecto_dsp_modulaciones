@@ -4,5 +4,7 @@ __pycache__/
 .DS_Store
 Thumbs.db
 outputs/word/rendered/
+outputs/docs/
+outputs/docs/rendered_src_doc/
 outputs/archive_notebooks/
 tools/

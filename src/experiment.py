@@ -1,5 +1,17 @@
 from __future__ import annotations
 
+"""Experimento base de clasificacion de modulaciones.
+
+Este script demuestra que el pipeline completo funciona:
+1. Generar senales sinteticas.
+2. Extraer rasgos DSP.
+3. Entrenar un MLP.
+4. Guardar metricas, matriz de confusion y parametros.
+
+En la investigacion actual este archivo queda como baseline historico; el
+aporte principal esta en los experimentos de cambio de dominio.
+"""
+
 import csv
 import json
 from pathlib import Path
@@ -12,7 +24,7 @@ from simple_mlp import SimpleMLP, accuracy, confusion_matrix
 
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT_DIR = ROOT / "outputs"
+OUTPUT_DIR = ROOT / "outputs" / "baseline"
 
 
 def train_test_split(
@@ -21,6 +33,7 @@ def train_test_split(
     test_fraction: float = 0.25,
     seed: int = 99,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Divide datos en entrenamiento y prueba de forma reproducible."""
     rng = np.random.default_rng(seed)
     indexes = rng.permutation(len(x))
     test_size = int(len(x) * test_fraction)
@@ -30,6 +43,7 @@ def train_test_split(
 
 
 def save_confusion_csv(matrix: np.ndarray, labels: list[str], path: Path) -> None:
+    """Guarda la matriz de confusion en CSV para revisar errores por clase."""
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
         writer.writerow(["real/predicho", *labels])
@@ -44,6 +58,7 @@ def save_summary(
     test_accuracy: float,
     path: Path,
 ) -> None:
+    """Guarda resumen JSON con accuracy global y accuracy por modulacion."""
     per_class = {}
     for i, label in enumerate(labels):
         total = matrix[i].sum()
@@ -65,6 +80,7 @@ def save_summary(
 
 
 def main() -> None:
+    """Ejecuta el experimento base completo."""
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     print("Generando dataset sintetico...")
@@ -73,6 +89,8 @@ def main() -> None:
 
     print("Extrayendo rasgos DSP...")
     x = extract_feature_matrix(signals)
+    # Primero se separa entrenamiento/prueba y luego se normaliza usando solo
+    # estadisticas del entrenamiento.
     x_train, x_test, y_train, y_test = train_test_split(x, y)
     x_train, x_test, mean, std = standardize_train_test(x_train, x_test)
 
@@ -86,6 +104,7 @@ def main() -> None:
     test_acc = accuracy(y_test, test_pred)
     matrix = confusion_matrix(y_test, test_pred, len(labels))
 
+    # Estos archivos alimentan el notebook, la demo y los documentos.
     save_confusion_csv(matrix, labels, OUTPUT_DIR / "confusion_matrix.csv")
     save_summary(labels, matrix, train_acc, test_acc, OUTPUT_DIR / "summary.json")
     np.savez(
